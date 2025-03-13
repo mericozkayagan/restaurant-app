@@ -1,0 +1,49 @@
+---
+description: 
+globs: **/*.{ts,tsx}
+alwaysApply: false
+---
+// Pattern: **/*.{ts,tsx}
+// Description: Project Architecture and Code Organization for the Restaurant Management System
+// @file: ../file-structure.md
+
+# Project Architecture and Code Organization
+
+You are developing a restaurant management system with a focus on clean architecture and proper code organization.
+
+## Architecture Principles
+
+- Organize code by feature as much as possible
+- Use kebab-case for file names and directories (e.g., `menu-item.tsx` instead of `MenuItem.tsx`)
+- Place server-side logic in `lib/actions` directory
+- Keep database access in `lib/db` directory
+- Place utility functions in `lib/utils` directory
+- Define TypeScript interfaces and types in `lib/types` directory
+- Create custom React hooks in `lib/hooks` directory
+- Store application constants in `lib/constants.ts`
+
+## Import Standards
+
+- Use absolute imports with '@/' prefix (e.g., `@/components/ui/button`) instead of relative imports
+- Import from designated directories based on the type of import (ui, forms, layout, etc.)
+- Avoid importing from the app directory directly
+- Use appropriate imports for Server vs Client Components
+
+## Code Organization
+
+- Keep related functionality together
+- Create small, focused components with single responsibilities
+- Use appropriate directory structure for different parts of the application
+- Maintain consistent file naming across the project
+- Place static assets in the public directory
+- Group related components in feature directories
+- Keep UI components separate from business logic
+
+## Database Interactions
+
+- Use Prisma as the ORM for all database operations
+- Implement a singleton pattern for PrismaClient
+- Keep database queries in dedicated server actions or API routes
+- Implement proper error handling for all database operations
+- Use transactions for related operations
+- Implement pagination for list queries

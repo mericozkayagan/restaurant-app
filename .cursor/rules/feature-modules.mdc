@@ -1,0 +1,65 @@
+---
+description: 
+globs:     app/**/*.{ts,tsx}
+alwaysApply: false
+---
+// Pattern: app/**/*.{ts,tsx}
+// Description: Feature Module Implementation for Restaurant Management System
+// @file: ../../feature-design.md
+
+# Feature Module Implementation
+
+You are implementing specific feature modules for a restaurant management system, including menu management, table management, ordering, kitchen display, and payment processing.
+
+## Menu Management
+
+- Create an admin interface for CRUD operations on menu items
+- Implement image upload and optimization for menu items
+- Create a category management system for menu organization
+- Link menu items to ingredients for inventory tracking
+- Implement visibility controls (seasonal items, availability)
+- Add search functionality for quick menu item lookup
+
+## Table Management
+
+- Create a visual drag-and-drop interface for table layout
+- Implement real-time status updates for tables via WebSockets
+- Generate unique QR codes for each table for customer ordering
+- Create a table assignment system for servers
+- Implement table reservation functionality
+- Display current orders and status for each table
+
+## Online Ordering
+
+- Create a mobile-friendly customer ordering interface
+- Implement a real-time cart with React Context
+- Add special instructions capabilities for orders
+- Implement validation before order submission
+- Create order confirmation and tracking for customers
+- Allow customers to submit multiple orders during their meal
+
+## Kitchen Order System
+
+- Create a chronological display of incoming orders
+- Implement status updates (Preparing, Ready, etc.)
+- Add priority indicators for urgent orders
+- Create visual and audio notifications for new orders
+- Show preparation times for better kitchen management
+- Implement filtering and sorting options for orders
+
+## Payment Processing
+
+- Calculate bill with subtotal, tax, and total
+- Support multiple payment methods (cash, card, mobile)
+- Create digital receipts with email option
+- Implement split payment capabilities
+- Create proper accounting and reporting for payments
+- Handle tipping functionality
+
+## Cross-Cutting Concerns
+
+- Proper error handling is implemented
+- UI is accessible and responsive
+- Performance is optimized
+- Security best practices are followed
+- Real-time updates where necessary

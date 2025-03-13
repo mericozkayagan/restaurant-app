@@ -1,0 +1,46 @@
+---
+description: 
+globs:    app/**/*.{ts,tsx}
+alwaysApply: false
+---
+// Pattern: app/**/*.{ts,tsx}
+// Description: Next.js App Router Best Practices for the Restaurant Management System
+
+# Next.js App Router Best Practices
+
+You are implementing a restaurant management system using Next.js App Router, focusing on proper server/client component usage and optimal data fetching.
+
+## Component Architecture
+
+- Use 'next/navigation' instead of 'next/router'
+- Keep components as Server Components by default unless they need interactivity
+- Add 'use client' directive at the top of files that use React hooks (`useState`, `useEffect`, `useRef`, `useContext`)
+- Use Server Components for data fetching instead of `useEffect` + `fetch`
+- Leverage async Server Components for data fetching directly in the component
+- Use React Server Components for static content and data fetching
+- Reserve Client Components only for interactive elements
+
+## Performance Optimization
+
+- Implement streaming with Suspense for faster initial load
+- Use route groups (`(folderName)`) for organizing routes without affecting URL structure
+- Use the metadata API for SEO in page.tsx files
+- Use the `redirect` function from next/navigation for redirects in Server Components
+- Avoid importing from app directory; App Router treats each directory as a route segment
+- Use dynamic imports for large components with Next.js `dynamic` function
+
+## Error Handling & States
+
+- Implement proper error handling with error.tsx boundaries
+- Utilize route handlers in app/api for backend functionality
+- Use server actions for form handling and data mutations
+- Implement proper loading states with loading.tsx files
+- Use server action state with react-hook-form for form validation
+
+## Data Fetching Patterns
+
+- Use SWR for client-side data fetching with caching
+- Implement proper cache invalidation
+- Use parallel data fetching where possible
+- Use `generateMetadata` for dynamic metadata generation
+- Use `cookies()` and `headers()` from next/headers for server-side data access

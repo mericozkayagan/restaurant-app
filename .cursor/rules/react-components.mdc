@@ -1,0 +1,45 @@
+---
+description: 
+globs:    components/**/*.{tsx,ts}
+alwaysApply: false
+---
+// Pattern: components/**/*.{tsx,ts}
+// Description: React Component Patterns for the Restaurant Management System
+
+# React Component Patterns
+
+You are building UI components for a restaurant management system using React with Next.js, focusing on clean, maintainable, and performant components.
+
+## Component Structure & Style
+
+- Use the 'function' keyword for React components over arrow functions for better debug stack traces
+- Favor named exports over default exports for better module resolution and refactoring
+- Use descriptive variable names with auxiliary verbs (e.g., `isLoading`, `hasError`)
+- Structure files: exported component, subcomponents, helpers, static content, types
+- Group related state variables together for better readability
+- Use semantic elements (`button`, `nav`, `article`) instead of generic divs with roles
+- Use `clsx` or `cva` for conditional class composition with Tailwind
+
+## Performance & Optimization
+
+- Implement proper form validation with react-hook-form and zod
+- Wrap client components in Suspense with fallback for better loading states
+- Use dynamic imports for non-critical components to reduce initial bundle size
+- Use `React.memo` for preventing unnecessary re-renders of expensive components
+- Ensure callbacks and memoized values have appropriate dependency arrays
+- Break down large components into smaller, more manageable pieces
+
+## Component Organization
+
+- Organize components by feature or domain
+- Create reusable UI components in `components/ui`
+- Keep form components in `components/forms`
+- Place layout components in `components/layout`
+- Use feature-based organization for specific functionality
+
+## State Management
+
+- Use React Context API for global state and UI state management
+- Use SWR for data fetching, caching, and revalidation
+- Consider Zustand for complex state management needs
+- Implement proper error handling for all data fetching operations

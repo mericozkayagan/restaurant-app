@@ -1,0 +1,52 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+// Pattern: **/*.{tsx,jsx}
+// Description: Tailwind CSS and UI Best Practices for the Restaurant Management System
+
+# Tailwind CSS and UI Best Practices
+
+You are designing the user interface for a restaurant management system using Tailwind CSS, Shadcn UI, and following responsive design principles.
+
+## Core UI Principles
+
+- Use a mobile-first approach for responsive design
+- Implement consistent spacing using Tailwind's spacing scale
+- Use `clsx` or `cva` for conditional class composition
+- Leverage Tailwind's color system consistently throughout the app
+- Use Tailwind's built-in dark mode support with the appropriate class strategy
+- Extract common class combinations into reusable components
+- Maintain a consistent design language across the application
+- Use the shadcn/ui component library for common UI elements
+- Customize shadcn/ui components to match the restaurant's brand
+
+## Component Styling
+
+- Keep class names organized from layout to typography to interactive states
+- Use Tailwind's state variants (`hover:`, `focus:`, etc.) consistently
+- Avoid inline styles; use Tailwind classes instead
+- Group related utilities with brackets for readability
+- Use meaningful class order (layout, typography, visual, interactive)
+- Create custom Tailwind plugins for restaurant-specific design elements
+- Use CSS variables for theme colors in `tailwind.config.js`
+
+## Responsive Design
+
+- Test designs on various screen sizes and devices
+- Use appropriate breakpoints (`sm`, `md`, `lg`, `xl`, `2xl`)
+- Ensure touch targets are sufficiently large on mobile devices
+- Implement different layouts for different screen sizes where needed
+- Consider different navigation patterns for mobile vs desktop
+- Ensure consistent spacing across all viewport sizes
+
+## Restaurant-Specific UI Components
+
+- Design an intuitive table layout representation
+- Create clear visual states for table statuses
+- Use appropriate colors for order status indicators
+- Design visually scannable menu items with clear hierarchy
+- Implement accessible form controls for ordering
+- Create a clean, focused kitchen display system
+- Design dashboard components with clear data visualization

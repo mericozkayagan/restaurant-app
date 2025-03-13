@@ -1,0 +1,418 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model with role-based access
+model User {
+  id             String            @id @default(uuid())
+  name           String
+  email          String            @unique
+  password       String
+  role           UserRole          @default(CUSTOMER)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  ordersCreated  Order[]           @relation("CreatedBy")
+  ordersHandled  Order[]           @relation("HandledBy")
+  assignedTables TableAssignment[]
+  payments       Payment[]
+  shifts         Shift[]
+}
+
+enum UserRole {
+  ADMIN
+  MANAGER
+  SERVER
+  KITCHEN
+  CASHIER
+  CUSTOMER
+}
+
+// Restaurant tables with status
+model Table {
+  id           String            @id @default(uuid())
+  tableNumber  Int               @unique
+  capacity     Int
+  location     String // e.g., "Window", "Center", "Patio"
+  status       TableStatus       @default(AVAILABLE)
+  qrCode       String? // QR code for direct ordering
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  orders       Order[]
+  assignments  TableAssignment[]
+  reservations Reservation[]
+}
+
+enum TableStatus {
+  AVAILABLE
+  OCCUPIED
+  RESERVED
+  CLEANING
+}
+
+// Table assignments to servers/staff
+model TableAssignment {
+  id        String    @id @default(uuid())
+  userId    String
+  tableId   String
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  table     Table     @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@unique([userId, tableId, startTime])
+}
+
+// Table reservations
+model Reservation {
+  id              String            @id @default(uuid())
+  tableId         String
+  customerName    String
+  customerPhone   String?
+  customerEmail   String?
+  partySize       Int
+  reservationTime DateTime
+  duration        Int // Duration in minutes
+  notes           String?
+  status          ReservationStatus @default(CONFIRMED)
+  table           Table             @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+}
+
+enum ReservationStatus {
+  CONFIRMED
+  CHECKED_IN
+  COMPLETED
+  CANCELLED
+  NO_SHOW
+}
+
+// Food categories (Pizza, Sides, Desserts, Drinks)
+model Category {
+  id           String     @id @default(uuid())
+  name         String     @unique
+  description  String?
+  displayOrder Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  menuItems    MenuItem[]
+}
+
+// Menu items (including pizzas and other food items)
+model MenuItem {
+  id             String               @id @default(uuid())
+  name           String
+  description    String?
+  price          Decimal              @db.Decimal(10, 2)
+  image          String? // URL to image
+  calories       Int?
+  isVegetarian   Boolean              @default(false)
+  isVegan        Boolean              @default(false)
+  isGlutenFree   Boolean              @default(false)
+  isActive       Boolean              @default(true)
+  categoryId     String
+  displayOrder   Int                  @default(0)
+  isPizzaBase    Boolean              @default(false) // Is this a base pizza that can be customized
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  category       Category             @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  orderItems     OrderItem[]
+  customizations PizzaCustomization[]
+  ingredients    MenuItemIngredient[]
+  combos         ComboMenuItem[]
+  promotionItems PromotionItem[]
+}
+
+// Ingredients and inventory tracking
+model Ingredient {
+  id             String               @id @default(uuid())
+  name           String               @unique
+  description    String?
+  stockQuantity  Float
+  unit           String // e.g., "g", "kg", "oz", "unit"
+  reorderLevel   Float
+  costPerUnit    Decimal              @db.Decimal(10, 2)
+  isActive       Boolean              @default(true)
+  isPizzaTopping Boolean              @default(false)
+  category       String? // e.g., "Meat", "Cheese", "Vegetable", etc.
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  menuItems      MenuItemIngredient[]
+  pizzaToppings  PizzaTopping[]
+}
+
+// Junction table for menu items and ingredients
+model MenuItemIngredient {
+  menuItemId   String
+  ingredientId String
+  quantity     Float
+  isOptional   Boolean    @default(false)
+  menuItem     MenuItem   @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  ingredient   Ingredient @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@id([menuItemId, ingredientId])
+}
+
+// Pizza sizes
+model PizzaSize {
+  id             String               @id @default(uuid())
+  name           String               @unique // e.g., "Small", "Medium", "Large"
+  description    String?
+  diameter       Int? // in inches
+  basePrice      Decimal              @db.Decimal(10, 2)
+  displayOrder   Int                  @default(0)
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
+  customizations PizzaCustomization[]
+}
+
+// Pizza crusts
+model PizzaCrust {
+  id              String               @id @default(uuid())
+  name            String               @unique // e.g., "Thin", "Regular", "Deep Dish"
+  description     String?
+  priceAdjustment Decimal              @default(0.00) @db.Decimal(10, 2)
+  displayOrder    Int                  @default(0)
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+  customizations  PizzaCustomization[]
+}
+
+// Pizza toppings
+model PizzaTopping {
+  id                    String                      @id @default(uuid())
+  ingredientId          String
+  priceAdjustment       Decimal                     @db.Decimal(10, 2)
+  displayOrder          Int                         @default(0)
+  createdAt             DateTime                    @default(now())
+  updatedAt             DateTime                    @updatedAt
+  ingredient            Ingredient                  @relation(fields: [ingredientId], references: [id], onDelete: Cascade)
+  customizationToppings PizzaCustomizationTopping[]
+}
+
+// Pizza customization for orders
+model PizzaCustomization {
+  id                  String                      @id @default(uuid())
+  menuItemId          String // Base pizza menu item
+  sizeId              String? // Pizza size
+  crustId             String? // Pizza crust
+  specialInstructions String?
+  createdAt           DateTime                    @default(now())
+  updatedAt           DateTime                    @updatedAt
+  menuItem            MenuItem                    @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+  size                PizzaSize?                  @relation(fields: [sizeId], references: [id])
+  crust               PizzaCrust?                 @relation(fields: [crustId], references: [id])
+  toppings            PizzaCustomizationTopping[]
+  orderItems          OrderItem[]
+}
+
+// Junction table for pizza customizations and toppings
+model PizzaCustomizationTopping {
+  customizationId String
+  toppingId       String
+  quantity        Int                @default(1)
+  leftHalf        Boolean            @default(false)
+  rightHalf       Boolean            @default(false)
+  customization   PizzaCustomization @relation(fields: [customizationId], references: [id], onDelete: Cascade)
+  topping         PizzaTopping       @relation(fields: [toppingId], references: [id], onDelete: Cascade)
+
+  @@id([customizationId, toppingId])
+}
+
+// Combo meals/deals
+model Combo {
+  id          String          @id @default(uuid())
+  name        String
+  description String?
+  price       Decimal         @db.Decimal(10, 2)
+  discount    Decimal         @default(0.00) @db.Decimal(10, 2)
+  image       String?
+  isActive    Boolean         @default(true)
+  startDate   DateTime?
+  endDate     DateTime?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  items       ComboMenuItem[]
+  orderItems  OrderItem[]
+}
+
+// Junction table for combos and menu items
+model ComboMenuItem {
+  comboId    String
+  menuItemId String
+  quantity   Int      @default(1)
+  combo      Combo    @relation(fields: [comboId], references: [id], onDelete: Cascade)
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@id([comboId, menuItemId])
+}
+
+// Promotions and special offers
+model Promotion {
+  id            String          @id @default(uuid())
+  name          String
+  description   String?
+  discountType  DiscountType
+  discountValue Decimal         @db.Decimal(10, 2)
+  code          String?         @unique
+  startDate     DateTime
+  endDate       DateTime
+  isActive      Boolean         @default(true)
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  items         PromotionItem[]
+  orders        Order[]
+}
+
+enum DiscountType {
+  PERCENTAGE
+  FIXED_AMOUNT
+  BUY_ONE_GET_ONE
+  FREE_ITEM
+}
+
+// Junction table for promotions and menu items
+model PromotionItem {
+  promotionId String
+  menuItemId  String
+  promotion   Promotion @relation(fields: [promotionId], references: [id], onDelete: Cascade)
+  menuItem    MenuItem  @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@id([promotionId, menuItemId])
+}
+
+// Customer orders
+model Order {
+  id                  String              @id @default(uuid())
+  orderNumber         String              @unique
+  tableId             String?
+  orderType           OrderType           @default(DINE_IN)
+  status              OrderStatus         @default(PLACED)
+  specialInstructions String?
+  subtotal            Decimal             @db.Decimal(10, 2)
+  tax                 Decimal             @db.Decimal(10, 2)
+  tip                 Decimal             @default(0.00) @db.Decimal(10, 2)
+  total               Decimal             @db.Decimal(10, 2)
+  estimatedReadyTime  DateTime?
+  actualReadyTime     DateTime?
+  createdById         String
+  handledById         String?
+  promotionId         String?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  table               Table?              @relation(fields: [tableId], references: [id])
+  createdBy           User                @relation("CreatedBy", fields: [createdById], references: [id])
+  handledBy           User?               @relation("HandledBy", fields: [handledById], references: [id])
+  promotion           Promotion?          @relation(fields: [promotionId], references: [id])
+  items               OrderItem[]
+  statusUpdates       OrderStatusUpdate[]
+  payments            Payment[]
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEOUT
+  DELIVERY
+}
+
+enum OrderStatus {
+  PLACED
+  PREPARING
+  READY
+  DELIVERED
+  COMPLETED
+  CANCELLED
+}
+
+// Items within an order
+model OrderItem {
+  id                  String              @id @default(uuid())
+  orderId             String
+  menuItemId          String?
+  comboId             String?
+  customizationId     String?
+  quantity            Int
+  price               Decimal             @db.Decimal(10, 2)
+  specialInstructions String?
+  status              OrderItemStatus     @default(PLACED)
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
+  order               Order               @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  menuItem            MenuItem?           @relation(fields: [menuItemId], references: [id])
+  combo               Combo?              @relation(fields: [comboId], references: [id])
+  customization       PizzaCustomization? @relation(fields: [customizationId], references: [id])
+}
+
+enum OrderItemStatus {
+  PLACED
+  PREPARING
+  COOKING
+  READY
+  DELIVERED
+  CANCELLED
+}
+
+// Order status history
+model OrderStatusUpdate {
+  id        String      @id @default(uuid())
+  orderId   String
+  status    OrderStatus
+  notes     String?
+  createdAt DateTime    @default(now())
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// Payment processing
+model Payment {
+  id            String        @id @default(uuid())
+  orderId       String
+  amount        Decimal       @db.Decimal(10, 2)
+  paymentMethod PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  transactionId String?
+  processedById String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+  order         Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  processedBy   User          @relation(fields: [processedById], references: [id])
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  MOBILE_PAYMENT
+  GIFT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Staff work shifts
+model Shift {
+  id        String    @id @default(uuid())
+  userId    String
+  startTime DateTime
+  endTime   DateTime?
+  notes     String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}

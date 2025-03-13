@@ -1,0 +1,65 @@
+---
+description: 
+globs:     **/*.{ts,tsx,js,jsx}
+alwaysApply: false
+---
+// Pattern: **/*.{ts,tsx,js,jsx}
+// Description: Restaurant Management System - Main Rules File
+// @file: ./typescript.mdc
+// @file: ./nextjs-app-router.mdc
+// @file: ./react-components.mdc
+// @file: ./architecture.mdc
+// @file: ./error-handling.mdc
+// @file: ./accessibility.mdc
+// @file: ./real-time.mdc
+// @file: ./tailwind.mdc
+// @file: ./security.mdc
+// @file: ./feature-modules.mdc
+
+# Restaurant Management System
+
+You are developing a comprehensive restaurant management system using Next.js, TypeScript, React, Prisma, and Tailwind CSS. The system includes table management, online ordering, kitchen order displays, and payment processing.
+
+## Project Overview
+
+This restaurant management system aims to provide a complete solution for in-person dining management with these core features:
+- Menu Management
+- Table Management
+- Online Ordering
+- Kitchen Order System (KOS)
+- End-of-Meal Payment
+- Inventory Management
+- Reporting
+- Staff Management
+
+## Development Principles
+
+When writing code for this project, consider these key aspects:
+- Focus on creating a clean, maintainable codebase with proper separation of concerns
+- Write modular, reusable components that follow the single responsibility principle
+- Implement proper error handling throughout the application
+- Ensure the application is accessible to all users
+- Optimize for performance, especially for real-time features
+- Follow security best practices for handling user data and payments
+- Create a responsive, mobile-friendly interface for all user roles
+- Use appropriate TypeScript types for all data structures
+- Follow the project architecture outlined in our design documents
+
+## User Roles
+
+The system has several user roles with different needs:
+- **Administrators**: Manage the entire system, including menu, staff, and reports
+- **Kitchen Staff**: View and update order status in the kitchen display system
+- **Servers/Waitstaff**: Manage tables, take orders, and process payments
+- **Customers**: Browse menu and place orders via table-specific interfaces
+
+## Technology Stack
+
+- **Frontend**: Next.js with TypeScript
+- **Database ORM**: Prisma with PostgreSQL
+- **Authentication**: NextAuth.js
+- **State Management**: React Context and SWR
+- **Styling**: Tailwind CSS with shadcn/ui components
+- **Real-time Updates**: Socket.io for kitchen and table updates
+
+Refer to the specific rule files for detailed guidance on each aspect of development.

@@ -1,0 +1,33 @@
+---
+description: 
+globs:    **/*.{ts,tsx}
+alwaysApply: false
+---
+// Pattern: **/*.{ts,tsx}
+// Description: TypeScript Best Practices for the Restaurant Management System
+
+# TypeScript Best Practices
+
+You are writing TypeScript code for a restaurant management system using Next.js, Prisma, and React.
+
+## Core TypeScript Guidelines
+
+- Use proper typing and avoid `any` type. Use `unknown` when type is truly unknown
+- Create interfaces for all React component props (use `interface ComponentNameProps`)
+- Add return types to all functions
+- Prefer interfaces over type aliases for object types
+- Avoid non-null assertions (`!`), use optional chaining (`?.`) or nullish coalescing (`??`) instead
+- Use named function parameters with object destructuring for better readability (RORO pattern)
+- Use union types or const objects instead of enums for better type safety
+- Create proper types for all API responses and requests
+- Use TypeScript's utility types where appropriate (`Pick`, `Omit`, `Partial`, etc.)
+- Use const assertions for literal values
+- Properly type async functions with `Promise<ReturnType>`
+
+## Prisma-Specific Guidelines
+
+- All database operations are properly typed
+- Use transactions for multiple database operations
+- Add proper error handling for database operations
+- Consider performance implications of deep includes
+- Use the singleton pattern for PrismaClient to prevent connection issues

@@ -1,0 +1,50 @@
+---
+description: 
+globs:    **/*.{tsx,jsx}
+alwaysApply: false
+---
+// Pattern: **/*.{tsx,jsx}
+// Description: Accessibility Best Practices for the Restaurant Management System
+
+# Accessibility Best Practices
+
+You are building an accessible restaurant management system that needs to work for all users, including those with disabilities.
+
+## Core Accessibility Principles
+
+- All images must have `alt` attributes describing their content or purpose
+- Use semantic HTML elements (`nav`, `header`, `footer`, `button`, etc.) instead of generic divs
+- Use proper heading hierarchy (h1-h6) with only one h1 per page
+- Ensure sufficient color contrast for text elements (WCAG AA standard minimum)
+- Add appropriate ARIA attributes to interactive elements
+- Use `aria-label` or `aria-labelledby` for elements without visible text
+- Implement proper keyboard navigation and focus management
+- Use native HTML elements (`button`, `a`, `input`) instead of custom elements where possible
+- Ensure form controls have associated labels
+- Add error messages for form validation that are announced to screen readers
+- Use `tabIndex` sparingly and consider natural tab order
+- Ensure functionality is available without requiring a mouse
+- Implement focus styles that are visible and clear
+- Create responsive designs that work at different zoom levels
+
+## Dynamic Content Accessibility
+
+- Use `aria-live` regions for announcements
+- Update page titles when content changes significantly
+- Announce loading states and completion to screen readers
+- Use role attributes appropriately
+- Implement proper focus management after UI updates
+
+## Tables and Data Accessibility
+
+- Use proper table markup with headers
+- Associate data cells with headers
+- Provide text alternatives for charts and graphs
+- Add captions or summaries for complex data
+
+## Modal and Overlay Accessibility
+
+- Trap focus within modal dialogs
+- Return focus to triggering element when closing
+- Implement proper `aria-modal` attributes
+- Ensure ESC key closes modals

@@ -1,0 +1,48 @@
+---
+description: 
+globs:    **/*.{ts,tsx}
+alwaysApply: false
+---
+// Pattern: **/*.{ts,tsx}
+// Description: Real-time Data Handling for the Restaurant Management System
+
+# Real-time Data Handling
+
+You are implementing real-time features for a restaurant management system using WebSockets/Socket.io, particularly for the Kitchen Order System (KOS) and table management.
+
+## Core Real-time Principles
+
+- Use Socket.io for WebSocket communication between clients and server
+- Implement proper connection management in `useEffect` hooks
+- Clean up socket event listeners in `useEffect` return functions
+- Create appropriate socket event channels for different features
+- Handle socket connection errors gracefully
+- Implement reconnection logic for dropped connections
+- Use proper authentication with socket connections
+- Implement room-based communication for table-specific updates
+- Broadcast updates to all relevant clients when data changes
+
+## Kitchen Order System
+
+- Implement real-time order notifications for kitchen staff
+- Create visual and audio alerts for new orders
+- Update order status in real-time across all clients
+- Prioritize orders based on time and complexity
+- Notify servers when orders are ready for delivery
+
+## Table Management
+
+- Update table status in real-time
+- Show when tables are occupied, available, or reserved
+- Notify staff of table status changes
+- Implement queue management for waiting customers
+- Display real-time order status to customers
+
+## Data Consistency
+
+- Implement optimistic UI updates with fallback for failed operations
+- Sync state between multiple clients viewing the same data
+- Handle race conditions in concurrent updates
+- Implement appropriate locking mechanisms where needed
+- Confirm successful data transmission before updating UI
+- Handle offline scenarios with proper state recovery

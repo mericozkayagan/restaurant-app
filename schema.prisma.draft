@@ -1,0 +1,217 @@
+// This is a draft schema file for the Restaurant Management System
+// Will be moved to prisma/schema.prisma when implementing
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User management
+model User {
+  id            String         @id @default(cuid())
+  email         String         @unique
+  name          String?
+  password      String         // Hashed password
+  role          UserRole       @default(STAFF)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  assignedTables Table[]       // Tables assigned to server
+  orders        Order[]        // Orders taken by this user
+  payments      Payment[]      // Payments processed by this user
+  shifts        Shift[]
+}
+
+enum UserRole {
+  ADMIN         // Restaurant administrator, full access
+  MANAGER       // Restaurant manager
+  STAFF         // Waitstaff/servers
+  KITCHEN       // Kitchen staff
+  CUSTOMER      // Customer role (if implementing customer accounts)
+}
+
+// Menu management
+model MenuItem {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  price         Decimal        @db.Decimal(10, 2)
+  image         String?        // URL to image
+  available     Boolean        @default(true)
+  preparationTime Int?         // Estimated preparation time in minutes
+  categoryId    String
+  category      Category       @relation(fields: [categoryId], references: [id])
+  ingredients   IngredientItem[]
+  orderItems    OrderItem[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Category {
+  id            String         @id @default(cuid())
+  name          String
+  description   String?
+  menuItems     MenuItem[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+// Table management
+model Table {
+  id            String         @id @default(cuid())
+  number        Int            @unique
+  capacity      Int            @default(4)
+  status        TableStatus    @default(AVAILABLE)
+  locationX     Int?           // X coordinate for visual layout
+  locationY     Int?           // Y coordinate for visual layout
+  assignedTo    User?          @relation(fields: [assignedToId], references: [id])
+  assignedToId  String?
+  orders        Order[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+enum TableStatus {
+  AVAILABLE     // Table is available for seating
+  OCCUPIED      // Table has customers seated
+  RESERVED      // Table is reserved
+  DIRTY         // Table needs cleaning
+  CLEANING      // Table is being cleaned
+}
+
+// Order management
+model Order {
+  id            String         @id @default(cuid())
+  orderNumber   String         @unique // Human readable order number
+  tableId       String
+  table         Table          @relation(fields: [tableId], references: [id])
+  items         OrderItem[]
+  status        OrderStatus    @default(NEW)
+  subtotal      Decimal        @db.Decimal(10, 2)
+  tax           Decimal        @db.Decimal(10, 2)
+  total         Decimal        @db.Decimal(10, 2)
+  serverId      String?        // Server who took the order
+  server        User?          @relation(fields: [serverId], references: [id])
+  payment       Payment?
+  specialInstructions String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model OrderItem {
+  id            String         @id @default(cuid())
+  orderId       String
+  order         Order          @relation(fields: [orderId], references: [id])
+  menuItemId    String
+  menuItem      MenuItem       @relation(fields: [menuItemId], references: [id])
+  quantity      Int            @default(1)
+  notes         String?        // Special instructions for this item
+  status        OrderItemStatus @default(PENDING)
+  price         Decimal        @db.Decimal(10, 2) // Price at time of order (may differ from current menu price)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+enum OrderStatus {
+  NEW           // Order just created
+  IN_PROGRESS   // Order is being prepared
+  READY         // Order is ready for service
+  DELIVERED     // Order has been delivered to the table
+  COMPLETED     // Order is completed (paid)
+  CANCELLED     // Order was cancelled
+}
+
+enum OrderItemStatus {
+  PENDING       // Item not yet started
+  PREPARING     // Item is being prepared
+  READY         // Item is ready to be served
+  DELIVERED     // Item has been delivered to the table
+  CANCELLED     // Item was cancelled
+}
+
+// Payment management
+model Payment {
+  id            String         @id @default(cuid())
+  orderId       String         @unique
+  order         Order          @relation(fields: [orderId], references: [id])
+  amount        Decimal        @db.Decimal(10, 2)
+  method        PaymentMethod
+  status        PaymentStatus  @default(PENDING)
+  processedById String?
+  processedBy   User?          @relation(fields: [processedById], references: [id])
+  transactionId String?        // For electronic payments
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+enum PaymentMethod {
+  CASH
+  CREDIT_CARD
+  DEBIT_CARD
+  MOBILE_PAYMENT
+  GIFT_CARD
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+// Inventory management
+model Ingredient {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  description   String?
+  unit          String         // e.g., "kg", "liters", etc.
+  currentStock  Decimal        @db.Decimal(10, 2)
+  minimumStock  Decimal        @db.Decimal(10, 2)
+  menuItems     IngredientItem[]
+  transactions  InventoryTransaction[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model IngredientItem {
+  id            String         @id @default(cuid())
+  menuItemId    String
+  menuItem      MenuItem       @relation(fields: [menuItemId], references: [id])
+  ingredientId  String
+  ingredient    Ingredient     @relation(fields: [ingredientId], references: [id])
+  quantity      Decimal        @db.Decimal(10, 2)
+
+  @@unique([menuItemId, ingredientId])
+}
+
+model InventoryTransaction {
+  id            String         @id @default(cuid())
+  ingredientId  String
+  ingredient    Ingredient     @relation(fields: [ingredientId], references: [id])
+  quantity      Decimal        @db.Decimal(10, 2) // Negative for deductions, positive for additions
+  type          TransactionType
+  notes         String?
+  createdAt     DateTime       @default(now())
+}
+
+enum TransactionType {
+  PURCHASE
+  USAGE
+  WASTE
+  ADJUSTMENT
+}
+
+// Staff management
+model Shift {
+  id            String         @id @default(cuid())
+  userId        String
+  user          User           @relation(fields: [userId], references: [id])
+  startTime     DateTime
+  endTime       DateTime?
+  notes         String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
