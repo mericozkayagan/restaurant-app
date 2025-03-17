@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Users, Utensils, Clock, PlusCircle } from 'lucide-react';
+import { Users, Utensils, Clock, PlusCircle, Home, ChefHat, Settings, ArrowLeft } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 // Mock data for demonstration
 const mockTables = [
@@ -26,6 +27,7 @@ const mockTables = [
 export default function ServerDashboardPage() {
   const [tables, setTables] = useState(mockTables);
   const [selectedLocation, setSelectedLocation] = useState<string | null>(null);
+  const router = useRouter();
 
   const filteredTables = selectedLocation
     ? tables.filter((table) => table.location === selectedLocation)
@@ -48,43 +50,98 @@ export default function ServerDashboardPage() {
     }
   };
 
+  const handleTableClick = (tableId: string) => {
+    // In a real application, this would direct to the table page
+    // For now we'll just log it
+    console.log(`Navigating to table ${tableId}`);
+
+    // To show we can navigate to orders for this table
+    // Since we don't have the actual pages yet, we'll navigate to a placeholder
+    // This would be replaced with real routes when they exist
+    router.push(`/dashboard/server/tables/${tableId}`);
+  };
+
+  const handleCreateNewOrder = () => {
+    router.push('/dashboard/server/orders/new');
+  };
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      {/* Navigation Bar */}
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Table Management</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Server Dashboard</h1>
           <p className="text-muted-foreground">
-            View and manage restaurant tables and customer orders.
+            Manage tables, orders, and customer service.
           </p>
         </div>
-        <Button>
+        <div className="flex space-x-4">
+          <Link href="/">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Home size={16} />
+              Home
+            </Button>
+          </Link>
+          <Link href="/dashboard/admin">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Settings size={16} />
+              Admin
+            </Button>
+          </Link>
+          <Link href="/dashboard/kitchen">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ChefHat size={16} />
+              Kitchen
+            </Button>
+          </Link>
+          <Link href="/customer">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ArrowLeft size={16} />
+              Customer View
+            </Button>
+          </Link>
+        </div>
+      </div>
+
+      {/* Action Buttons */}
+      <div className="flex justify-between items-center">
+        {/* Filter buttons */}
+        <div className="flex space-x-4">
+          <Button
+            variant={selectedLocation === null ? 'default' : 'outline'}
+            onClick={() => setSelectedLocation(null)}
+          >
+            All Locations
+          </Button>
+          {locations.map((location) => (
+            <Button
+              key={location}
+              variant={selectedLocation === location ? 'default' : 'outline'}
+              onClick={() => setSelectedLocation(location)}
+            >
+              {location}
+            </Button>
+          ))}
+        </div>
+
+        {/* New Order button */}
+        <Button
+          onClick={handleCreateNewOrder}
+          className="bg-orange-600 hover:bg-orange-700"
+        >
           <PlusCircle className="mr-2 h-4 w-4" />
           New Order
         </Button>
       </div>
 
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={selectedLocation === null ? 'default' : 'outline'}
-          onClick={() => setSelectedLocation(null)}
-        >
-          All Locations
-        </Button>
-        {locations.map((location) => (
-          <Button
-            key={location}
-            variant={selectedLocation === location ? 'default' : 'outline'}
-            onClick={() => setSelectedLocation(location)}
-          >
-            {location}
-          </Button>
-        ))}
-      </div>
-
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {filteredTables.map((table) => (
-          <Link href={`/dashboard/server/tables/${table.id}`} key={table.id}>
-            <Card className="cursor-pointer transition-all hover:shadow-md">
+          <div
+            key={table.id}
+            onClick={() => handleTableClick(table.id)}
+            className="cursor-pointer"
+          >
+            <Card className="transition-all hover:shadow-md">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-xl font-bold">
                   Table {table.tableNumber}
@@ -120,7 +177,7 @@ export default function ServerDashboardPage() {
                 </div>
               </CardContent>
             </Card>
-          </Link>
+          </div>
         ))}
       </div>
     </div>

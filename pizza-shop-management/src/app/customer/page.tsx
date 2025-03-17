@@ -1,93 +1,33 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
+import { ShoppingCart, MapPin, ChevronRight, Search, Bell, Home, ArrowLeft } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ShoppingCart, Plus, Minus } from 'lucide-react';
 
-// Mock data for demonstration
-const mockCategories = [
-  { id: '1', name: 'Pizzas', displayOrder: 1 },
-  { id: '2', name: 'Sides', displayOrder: 2 },
-  { id: '3', name: 'Drinks', displayOrder: 3 },
-  { id: '4', name: 'Desserts', displayOrder: 4 },
-];
+// Types for database items
+type MenuItem = {
+  id: string;
+  name: string;
+  description: string | null;
+  price: number;
+  image: string | null;
+  categoryId: string;
+  isActive: boolean;
+  category?: {
+    name: string;
+  };
+};
 
-const mockMenuItems = [
-  {
-    id: '1',
-    name: 'Margherita Pizza',
-    description: 'Classic pizza with tomato sauce, mozzarella, and basil',
-    price: 12.99,
-    image: '/images/margherita.jpg',
-    categoryId: '1',
-    isVegetarian: true,
-    isPizzaBase: true,
-  },
-  {
-    id: '2',
-    name: 'Pepperoni Pizza',
-    description: 'Pizza with tomato sauce, mozzarella, and pepperoni',
-    price: 14.99,
-    image: '/images/pepperoni.jpg',
-    categoryId: '1',
-    isVegetarian: false,
-    isPizzaBase: true,
-  },
-  {
-    id: '3',
-    name: 'BBQ Chicken Pizza',
-    description: 'Pizza with BBQ sauce, chicken, red onions, and cilantro',
-    price: 15.99,
-    image: '/images/bbq-chicken.jpg',
-    categoryId: '1',
-    isVegetarian: false,
-    isPizzaBase: true,
-  },
-  {
-    id: '4',
-    name: 'Garlic Breadsticks',
-    description: 'Freshly baked breadsticks with garlic butter and herbs',
-    price: 5.99,
-    image: '/images/breadsticks.jpg',
-    categoryId: '2',
-    isVegetarian: true,
-    isPizzaBase: false,
-  },
-  {
-    id: '5',
-    name: 'Caesar Salad',
-    description: 'Romaine lettuce, croutons, parmesan cheese, and Caesar dressing',
-    price: 7.99,
-    image: '/images/caesar-salad.jpg',
-    categoryId: '2',
-    isVegetarian: true,
-    isPizzaBase: false,
-  },
-  {
-    id: '6',
-    name: 'Coca-Cola',
-    description: '20oz bottle',
-    price: 2.49,
-    image: '/images/coke.jpg',
-    categoryId: '3',
-    isVegetarian: true,
-    isPizzaBase: false,
-  },
-  {
-    id: '7',
-    name: 'Chocolate Lava Cake',
-    description: 'Warm chocolate cake with a molten chocolate center',
-    price: 6.99,
-    image: '/images/lava-cake.jpg',
-    categoryId: '4',
-    isVegetarian: true,
-    isPizzaBase: false,
-  },
-];
+type Category = {
+  id: string;
+  name: string;
+  description: string | null;
+  displayOrder: number;
+};
 
 type CartItem = {
   id: string;
@@ -95,218 +35,377 @@ type CartItem = {
   name: string;
   price: number;
   quantity: number;
-  customizations?: string[];
 };
 
 export default function CustomerOrderingPage() {
   const [cart, setCart] = useState<CartItem[]>([]);
-  const [tableNumber, setTableNumber] = useState(5); // Mock table number
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const addToCart = (menuItem: any) => {
-    const existingItemIndex = cart.findIndex(
-      (item) => item.menuItemId === menuItem.id
-    );
+  // Fetch menu items and categories from the API
+  useEffect(() => {
+    setIsLoading(true);
 
-    if (existingItemIndex !== -1) {
-      // Item already in cart, increase quantity
-      const updatedCart = [...cart];
-      updatedCart[existingItemIndex].quantity += 1;
-      setCart(updatedCart);
-    } else {
-      // Add new item to cart
-      setCart([
-        ...cart,
-        {
-          id: `${menuItem.id}-${Date.now()}`,
-          menuItemId: menuItem.id,
-          name: menuItem.name,
-          price: menuItem.price,
-          quantity: 1,
-        },
-      ]);
-    }
-  };
-
-  const removeFromCart = (cartItemId: string) => {
-    const existingItemIndex = cart.findIndex((item) => item.id === cartItemId);
-
-    if (existingItemIndex !== -1) {
-      const updatedCart = [...cart];
-      if (updatedCart[existingItemIndex].quantity > 1) {
-        // Decrease quantity
-        updatedCart[existingItemIndex].quantity -= 1;
-      } else {
-        // Remove item from cart
-        updatedCart.splice(existingItemIndex, 1);
+    // Fetch menu items
+    const fetchMenuItems = async () => {
+      try {
+        const response = await fetch('/api/menu?limit=20');
+        if (!response.ok) {
+          throw new Error('Failed to fetch menu items');
+        }
+        const data = await response.json();
+        setMenuItems(data);
+      } catch (err) {
+        console.error('Error fetching menu items:', err);
+        setError('Failed to load menu items');
       }
-      setCart(updatedCart);
+    };
+
+    // Fetch categories
+    const fetchCategories = async () => {
+      try {
+        const response = await fetch('/api/categories');
+        if (!response.ok) {
+          throw new Error('Failed to fetch categories');
+        }
+        const data = await response.json();
+        setCategories(data);
+      } catch (err) {
+        console.error('Error fetching categories:', err);
+        setError('Failed to load categories');
+      }
+    };
+
+    // Execute both fetches in parallel
+    Promise.all([fetchMenuItems(), fetchCategories()])
+      .finally(() => {
+        setIsLoading(false);
+      });
+  }, []);
+
+  const handleOrderClick = (menuItem: MenuItem) => {
+    // Add simple cart functionality
+    const existingItem = cart.find(item => item.menuItemId === menuItem.id);
+
+    if (existingItem) {
+      setCart(cart.map(item =>
+        item.menuItemId === menuItem.id
+          ? {...item, quantity: item.quantity + 1}
+          : item
+      ));
+    } else {
+      setCart([...cart, {
+        id: `${menuItem.id}-${Date.now()}`,
+        menuItemId: menuItem.id,
+        name: menuItem.name,
+        price: Number(menuItem.price), // Ensure price is a number
+        quantity: 1
+      }]);
     }
   };
 
-  const calculateSubtotal = () => {
-    return cart.reduce((total, item) => total + item.price * item.quantity, 0);
+  // Filter menu items based on search query
+  const filteredMenuItems = searchQuery.trim() === ''
+    ? menuItems
+    : menuItems.filter(item =>
+        item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (item.description && item.description.toLowerCase().includes(searchQuery.toLowerCase()))
+      );
+
+  // Handle category selection - we'll add this function
+  const handleCategoryClick = (categoryId: string) => {
+    // Filter menu items by category
+    // For now just log the action
+    console.log(`Selected category: ${categoryId}`);
+    // In a real implementation, you would filter the menu items by category
   };
 
-  const calculateTax = () => {
-    return calculateSubtotal() * 0.0825; // 8.25% tax rate
-  };
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="mb-4 h-16 w-16 animate-spin rounded-full border-b-2 border-t-2 border-red-600 mx-auto"></div>
+          <p className="text-lg font-medium text-gray-700">Loading...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const calculateTotal = () => {
-    return calculateSubtotal() + calculateTax();
-  };
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-gray-100">
+        <div className="text-center">
+          <div className="mb-4 text-red-600 text-5xl">⚠️</div>
+          <p className="text-lg font-medium text-gray-700">{error}</p>
+          <Button
+            className="mt-4 bg-red-600 hover:bg-red-700"
+            onClick={() => window.location.reload()}
+          >
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-gray-100">
-      <header className="bg-orange-600 p-4 text-white">
-        <div className="container mx-auto flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Pizza Shop</h1>
-            <p className="text-sm">Table #{tableNumber}</p>
+      {/* Top Navigation Bar */}
+      <header className="bg-black text-white">
+        <div className="container mx-auto flex items-center justify-between px-4 py-3">
+          <div className="flex items-center space-x-6">
+            {/* Logo with link to homepage */}
+            <Link href="/" className="text-3xl font-bold text-white flex items-center">
+              <span className="bg-blue-600 p-1">P</span>izza Shop
+            </Link>
+
+            {/* Main Navigation */}
+            <nav className="hidden space-x-6 md:flex">
+              <Link href="/customer?category=promotions" className="font-medium hover:text-orange-400">Tüm Kampanyalar</Link>
+              <Link href="/customer?category=pizzas" className="font-medium hover:text-orange-400">Tüm Pizzalar</Link>
+              <Link href="/customer?category=sides" className="font-medium hover:text-orange-400">Ekstralar & İçecekler</Link>
+              <Link href="/customer?category=offers" className="font-medium hover:text-orange-400">Fırsatlar</Link>
+            </nav>
           </div>
-          <div className="relative">
-            <ShoppingCart className="h-6 w-6" />
-            {cart.length > 0 && (
-              <Badge className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-white p-0 text-xs font-bold text-orange-600">
-                {cart.reduce((total, item) => total + item.quantity, 0)}
-              </Badge>
-            )}
+
+          <div className="flex items-center space-x-4">
+            <Bell className="h-6 w-6" />
+            <Link href="/auth/signin">
+              <Button className="rounded-full bg-white px-4 py-2 font-bold text-black hover:bg-gray-200">
+                Giriş Yap
+              </Button>
+            </Link>
+            <div className="relative">
+              <ShoppingCart className="h-6 w-6" />
+              {cart.length > 0 && (
+                <Badge className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-white p-0 text-xs font-bold text-orange-600">
+                  {cart.reduce((total, item) => total + item.quantity, 0)}
+                </Badge>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="container mx-auto flex flex-1 flex-col md:flex-row">
-        <div className="flex-1 p-4">
-          <Tabs defaultValue={mockCategories[0].id} className="w-full">
-            <TabsList className="mb-4 flex w-full justify-start space-x-2 overflow-x-auto">
-              {mockCategories.map((category) => (
-                <TabsTrigger
-                  key={category.id}
-                  value={category.id}
-                  className="px-4 py-2"
-                >
-                  {category.name}
-                </TabsTrigger>
-              ))}
-            </TabsList>
+      {/* Dashboard Navigation Bar - Hidden on customer page in normal use case,
+          but kept for development purposes with a subtle background */}
+      <div className="bg-gray-800 bg-opacity-80 text-white py-2">
+        <div className="container mx-auto px-4">
+          <div className="flex items-center space-x-4">
+            <Link href="/" className="flex items-center text-sm hover:text-orange-400">
+              <Home className="h-4 w-4 mr-1" />
+              Ana Sayfa
+            </Link>
+            <span className="text-gray-500">/</span>
+            <Link href="/dashboard/admin" className="text-sm hover:text-orange-400">Yönetici</Link>
+            <span className="text-gray-500">/</span>
+            <Link href="/dashboard/kitchen" className="text-sm hover:text-orange-400">Mutfak</Link>
+            <span className="text-gray-500">/</span>
+            <Link href="/dashboard/server" className="text-sm hover:text-orange-400">Garson</Link>
+          </div>
+        </div>
+      </div>
 
-            {mockCategories.map((category) => (
-              <TabsContent key={category.id} value={category.id} className="mt-0">
-                <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-                  {mockMenuItems
-                    .filter((item) => item.categoryId === category.id)
-                    .map((item) => (
-                      <Card key={item.id} className="overflow-hidden">
-                        <div className="relative h-48 w-full">
-                          <div className="absolute inset-0 bg-gray-200" />
-                          {/* Placeholder for image */}
-                          <div className="absolute inset-0 flex items-center justify-center bg-gray-200 text-gray-500">
-                            {item.name} Image
-                          </div>
-                        </div>
-                        <CardHeader>
-                          <div className="flex items-center justify-between">
-                            <CardTitle>{item.name}</CardTitle>
-                            {item.isVegetarian && (
-                              <Badge variant="outline" className="bg-green-50 text-green-700">
-                                Vegetarian
-                              </Badge>
-                            )}
-                          </div>
-                          <CardDescription>{item.description}</CardDescription>
-                        </CardHeader>
-                        <CardFooter className="flex items-center justify-between">
-                          <div className="text-lg font-bold">${item.price.toFixed(2)}</div>
-                          <Button onClick={() => addToCart(item)}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add to Order
-                          </Button>
-                        </CardFooter>
-                      </Card>
-                    ))}
+      {/* Location Bar */}
+      <div className="border-b border-gray-300 bg-white py-2">
+        <div className="container mx-auto flex items-center justify-between px-4">
+          <div className="flex items-center space-x-2">
+            <Button variant="outline" className="flex items-center space-x-2 border-gray-300">
+              <MapPin className="h-4 w-4 text-red-600" />
+              <span className="text-sm">Beklemeden Gel Al</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="outline" className="flex items-center space-x-2 border-gray-300">
+              <span className="text-sm">Göktepe Şubesi</span>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Search Bar */}
+      <div className="bg-gray-100 py-4">
+        <div className="container mx-auto px-4">
+          <div className="relative">
+            <input
+              type="text"
+              placeholder="Pizza, kampanya veya malzeme ara..."
+              className="w-full rounded-lg border border-gray-300 py-3 pl-4 pr-10 focus:border-blue-500 focus:outline-none"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+            />
+            <Search className="absolute right-3 top-3 h-5 w-5 text-gray-400" />
+          </div>
+        </div>
+      </div>
+
+      <main className="flex-1">
+        {/* Promotional Banner */}
+        <div className="relative bg-red-700 py-6">
+          <div className="container mx-auto px-4">
+            <div className="flex flex-col items-center justify-between md:flex-row">
+              <div className="mb-4 text-center md:mb-0 md:text-left">
+                <h2 className="text-2xl font-bold text-white md:text-4xl">RAMAZANDA BOL LEZZET SEPETTE</h2>
+                <div className="mt-2 text-5xl font-bold text-white md:text-7xl">100 TL</div>
+                <div className="text-xl font-bold text-white md:text-3xl">CEBİNDE</div>
+              </div>
+              <div className="flex flex-col items-center md:flex-row">
+                <div className="flex items-center">
+                  <div className="rounded-lg bg-white p-2 text-xl font-bold text-blue-600">
+                    KOD: CEPTE100
+                  </div>
                 </div>
-              </TabsContent>
-            ))}
-          </Tabs>
+                <div className="mt-4 md:ml-6 md:mt-0">
+                  <img
+                    src="https://placehold.co/300x200/png?text=Pizza+Promo"
+                    alt="Promotional Pizza"
+                    className="rounded-lg"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
 
-        <div className="w-full border-t border-gray-200 bg-white p-4 md:w-96 md:border-l md:border-t-0">
-          <div className="sticky top-4">
-            <h2 className="mb-4 text-xl font-bold">Your Order</h2>
+        {/* Category Cards */}
+        <div className="bg-gray-100 py-4">
+          <div className="container mx-auto grid grid-cols-1 gap-4 px-4 sm:grid-cols-2 md:grid-cols-3">
+            {categories.slice(0, 3).map((category) => (
+              <Link href={`/customer?category=${category.id}`} key={category.id}>
+                <div className="flex cursor-pointer items-center space-x-3 rounded-lg bg-white p-4 shadow-sm hover:shadow-md">
+                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-yellow-100 text-2xl">
+                    {category.name.includes('Pizza') ? '🍕' :
+                     category.name.includes('Drink') ? '🥤' :
+                     category.name.includes('Promo') ? '🏷️' : '🍽️'}
+                  </span>
+                  <span className="font-medium">{category.name}</span>
+                </div>
+              </Link>
+            ))}
+          </div>
+        </div>
 
-            {cart.length === 0 ? (
-              <div className="py-8 text-center text-gray-500">
-                Your cart is empty. Add some delicious items!
+        {/* Pizza Grid */}
+        <div className="bg-gray-100 py-6">
+          <div className="container mx-auto px-4">
+            {filteredMenuItems.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-12">
+                <div className="text-4xl mb-4">🔍</div>
+                <p className="text-gray-600 text-lg mb-2">No items found</p>
+                <p className="text-gray-500">Try a different search term</p>
               </div>
             ) : (
-              <>
-                <div className="mb-4 space-y-4">
-                  {cart.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center justify-between border-b border-gray-100 pb-2"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center">
-                          <span className="mr-2 font-medium">{item.name}</span>
-                          <span className="text-sm text-gray-500">x{item.quantity}</span>
-                        </div>
-                        {item.customizations && item.customizations.length > 0 && (
-                          <div className="mt-1 text-xs text-gray-500">
-                            {item.customizations.join(', ')}
-                          </div>
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                {filteredMenuItems.map((menuItem) => (
+                  <div key={menuItem.id} className="overflow-hidden rounded-lg bg-white shadow-md">
+                    <div className="relative h-48 w-full">
+                      <div className="absolute inset-0 bg-gray-200 flex items-center justify-center">
+                        {menuItem.image ? (
+                          <img
+                            src={menuItem.image}
+                            alt={menuItem.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <img
+                            src="https://placehold.co/300x200/png?text=Pizza"
+                            alt={menuItem.name}
+                            className="h-full w-full object-cover"
+                          />
                         )}
                       </div>
-                      <div className="flex items-center">
-                        <span className="mr-4 font-medium">
-                          ${(item.price * item.quantity).toFixed(2)}
-                        </span>
-                        <div className="flex items-center">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6 rounded-full"
-                            onClick={() => removeFromCart(item.id)}
-                          >
-                            <Minus className="h-3 w-3" />
-                          </Button>
-                          <span className="mx-2">{item.quantity}</span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-6 w-6 rounded-full"
-                            onClick={() => addToCart({ id: item.menuItemId, name: item.name, price: item.price })}
-                          >
-                            <Plus className="h-3 w-3" />
-                          </Button>
-                        </div>
-                      </div>
                     </div>
-                  ))}
-                </div>
-
-                <div className="space-y-2 border-t border-gray-200 pt-4">
-                  <div className="flex justify-between">
-                    <span>Subtotal</span>
-                    <span>${calculateSubtotal().toFixed(2)}</span>
+                    <div className="p-4">
+                      <h3 className="mb-2 text-sm font-medium">{menuItem.name}</h3>
+                      {menuItem.category && (
+                        <div className="mb-2 text-xs text-gray-500">{menuItem.category.name}</div>
+                      )}
+                      <div className="mb-4 text-xl font-bold text-orange-700">${Number(menuItem.price).toFixed(2)}</div>
+                      <div className="text-xs text-gray-500">*starting from this price</div>
+                      <Button
+                        className="mt-3 w-full bg-orange-600 hover:bg-orange-700"
+                        onClick={() => handleOrderClick(menuItem)}
+                        disabled={!menuItem.isActive}
+                      >
+                        Order Now
+                      </Button>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Tax</span>
-                    <span>${calculateTax().toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between text-lg font-bold">
-                    <span>Total</span>
-                    <span>${calculateTotal().toFixed(2)}</span>
-                  </div>
-                </div>
-
-                <Button className="mt-6 w-full" size="lg">
-                  Place Order
-                </Button>
-              </>
+                ))}
+              </div>
             )}
           </div>
         </div>
+
+        {/* Additional Features */}
+        <div className="bg-white py-8">
+          <div className="container mx-auto grid grid-cols-1 gap-8 px-4 md:grid-cols-3">
+            {/* Loyalty Program */}
+            <div className="flex flex-col items-center rounded-lg border border-gray-200 p-6 text-center">
+              <div className="mb-4 text-yellow-500">🏆</div>
+              <h3 className="mb-2 text-lg font-semibold">Pizza Rewards</h3>
+              <p className="text-sm text-gray-600">Eat More, Earn More Rewards</p>
+              <Button variant="outline" className="mt-4 w-full border-gray-300">MY REWARDS</Button>
+            </div>
+
+            {/* Points */}
+            <div className="flex flex-col items-center rounded-lg border border-gray-200 p-6 text-center">
+              <div className="mb-4 text-yellow-500">⭐</div>
+              <h3 className="mb-2 text-lg font-semibold">Rate Your Orders</h3>
+              <p className="text-sm text-gray-600">Your feedback is important to us. Don't forget to rate your orders!</p>
+              <Button variant="outline" className="mt-4 w-full border-gray-300">RATE NOW</Button>
+            </div>
+
+            {/* Quick Order */}
+            <div className="flex flex-col items-center rounded-lg border border-gray-200 p-6 text-center">
+              <div className="mb-4 text-yellow-500">🚀</div>
+              <h3 className="mb-2 text-lg font-semibold">Quick Order</h3>
+              <p className="text-sm text-gray-600">By saving your frequently ordered items, you can speed up your checkout process and purchase your favorite products more quickly.</p>
+            </div>
+          </div>
+        </div>
       </main>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 py-8 text-white">
+        <div className="container mx-auto px-4">
+          <div className="mb-6 flex justify-between border-b border-gray-700 pb-6">
+            <div className="text-2xl font-bold">Pizza Shop</div>
+            <div className="flex space-x-4">
+              <a href="#" className="text-gray-400 hover:text-white">
+                <span className="sr-only">Facebook</span>
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fillRule="evenodd" d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987h-2.54V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z" clipRule="evenodd" />
+                </svg>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white">
+                <span className="sr-only">Twitter</span>
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path d="M8.29 20.251c7.547 0 11.675-6.253 11.675-11.675 0-.178 0-.355-.012-.53A8.348 8.348 0 0022 5.92a8.19 8.19 0 01-2.357.646 4.118 4.118 0 001.804-2.27 8.224 8.224 0 01-2.605.996 4.107 4.107 0 00-6.993 3.743 11.65 11.65 0 01-8.457-4.287 4.106 4.106 0 001.27 5.477A4.072 4.072 0 012.8 9.713v.052a4.105 4.105 0 003.292 4.022 4.095 4.095 0 01-1.853.07 4.108 4.108 0 003.834 2.85A8.233 8.233 0 012 18.407a11.616 11.616 0 006.29 1.84" />
+                </svg>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white">
+                <span className="sr-only">YouTube</span>
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fillRule="evenodd" d="M19.812 5.418c.861.23 1.538.907 1.768 1.768C21.998 8.746 22 12 22 12s0 3.255-.418 4.814a2.504 2.504 0 0 1-1.768 1.768c-1.56.419-7.814.419-7.814.419s-6.255 0-7.814-.419a2.505 2.505 0 0 1-1.768-1.768C2 15.255 2 12 2 12s0-3.255.417-4.814a2.507 2.507 0 0 1 1.768-1.768C5.744 5 11.998 5 11.998 5s6.255 0 7.814.418ZM15.194 12 10 15V9l5.194 3Z" clipRule="evenodd" />
+                </svg>
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white">
+                <span className="sr-only">Instagram</span>
+                <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+                  <path fillRule="evenodd" d="M12.315 2c2.43 0 2.784.013 3.808.06 1.064.049 1.791.218 2.427.465a4.902 4.902 0 011.772 1.153 4.902 4.902 0 011.153 1.772c.247.636.416 1.363.465 2.427.048 1.067.06 1.407.06 4.123v.08c0 2.643-.012 2.987-.06 4.043-.049 1.064-.218 1.791-.465 2.427a4.902 4.902 0 01-1.153 1.772 4.902 4.902 0 01-1.772 1.153c-.636.247-1.363.416-2.427.465-1.067.048-1.407.06-4.123.06h-.08c-2.643 0-2.987-.012-4.043-.06-1.064-.049-1.791-.218-2.427-.465a4.902 4.902 0 01-1.772-1.153 4.902 4.902 0 01-1.153-1.772c-.247-.636-.416-1.363-.465-2.427-.047-1.024-.06-1.379-.06-3.808v-.63c0-2.43.013-2.784.06-3.808.049-1.064.218-1.791.465-2.427a4.902 4.902 0 011.153-1.772A4.902 4.902 0 015.45 2.525c.636-.247 1.363-.416 2.427-.465C8.901 2.013 9.256 2 11.685 2h.63zm-.081 1.802h-.468c-2.456 0-2.784.011-3.807.058-.975.045-1.504.207-1.857.344-.467.182-.8.398-1.15.748-.35.35-.566.683-.748 1.15-.137.353-.3.882-.344 1.857-.047 1.023-.058 1.351-.058 3.807v.468c0 2.456.011 2.784.058 3.807.045.975.207 1.504.344 1.857.182.466.399.8.748 1.15.35.35.683.566 1.15.748.353.137.882.3 1.857.344 1.054.048 1.37.058 4.041.058h.08c2.597 0 2.917-.01 3.96-.058.976-.045 1.505-.207 1.858-.344.466-.182.8-.398 1.15-.748.35-.35.566-.683.748-1.15.137-.353.3-.882.344-1.857.048-1.055.058-1.37.058-4.041v-.08c0-2.597-.01-2.917-.058-3.96-.045-.976-.207-1.505-.344-1.858a3.097 3.097 0 00-.748-1.15 3.098 3.098 0 00-1.15-.748c-.353-.137-.882-.3-1.857-.344-1.023-.047-1.351-.058-3.807-.058zM12 6.865a5.135 5.135 0 110 10.27 5.135 5.135 0 010-10.27zm0 1.802a3.333 3.333 0 100 6.666 3.333 3.333 0 000-6.666zm5.338-3.205a1.2 1.2 0 110 2.4 1.2 1.2 0 010-2.4z" clipRule="evenodd" />
+                </svg>
+              </a>
+            </div>
+          </div>
+          <div className="text-center text-sm text-gray-400">
+            <p>© 2023 Pizza Shop, Inc. All rights reserved.</p>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

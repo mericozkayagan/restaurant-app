@@ -1,19 +1,24 @@
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import bcrypt from 'bcrypt';
-import { NextAuthOptions } from 'next-auth';
+// Use dynamic import for bcrypt to ensure it's only loaded in server context
+import type { NextAuthOptions } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 
 import { prisma } from '@/lib/db/prisma';
 import { UserRole } from '@prisma/client';
 
+// Mark the file as server-only to prevent client-side imports
+import 'server-only';
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  secret: process.env.NEXTAUTH_SECRET,
   pages: {
     signIn: '/auth/signin',
     error: '/auth/error',
   },
   session: {
     strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   providers: [
     CredentialsProvider({
@@ -37,6 +42,8 @@ export const authOptions: NextAuthOptions = {
           return null;
         }
 
+        // Import bcrypt dynamically to ensure it's only loaded in server context
+        const bcrypt = await import('bcrypt');
         const passwordMatch = await bcrypt.compare(
           credentials.password,
           user.password
@@ -71,6 +78,7 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
   },
+  debug: process.env.NODE_ENV === 'development',
 };
 
 export default authOptions;

@@ -1,56 +1,71 @@
 import { NextResponse } from 'next/server';
 import { NextRequest } from 'next/server';
-import { UserRole } from '@prisma/client';
 import { getToken } from 'next-auth/jwt';
 
-export default async function middleware(request: NextRequest) {
-  // In middleware, we need to use getToken instead of auth()
-  const token = await getToken({ req: request });
-
-  // Check if the user is authenticated
+// We need to use token validation directly in Edge rather than the full auth implementation
+export async function middleware(request: NextRequest) {
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET
+  });
   const isAuth = !!token;
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
-  const role = token?.role as UserRole | undefined;
+  const isCustomerPage = request.nextUrl.pathname.startsWith('/customer');
+  const isRootPage = request.nextUrl.pathname === '/';
+  const isDashboardPage = request.nextUrl.pathname === '/dashboard';
 
-  // Redirect unauthenticated users to login page
+  // Redirect root to customer page
+  if (isRootPage) {
+    return NextResponse.redirect(new URL('/customer', request.url));
+  }
+
+  // Allow access to customer page without authentication
+  if (isCustomerPage) {
+    return NextResponse.next();
+  }
+
+  // Redirect unauthenticated users to login page for protected routes
   if (!isAuth && !isAuthPage) {
     return NextResponse.redirect(new URL('/auth/signin', request.url));
   }
 
   // Redirect authenticated users away from auth pages
   if (isAuth && isAuthPage) {
-    return NextResponse.redirect(new URL('/', request.url));
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  // Handle role-based access
-  if (isAuth) {
-    // Admin routes - only admin and managers can access
-    if (
-      request.nextUrl.pathname.startsWith('/dashboard/admin') &&
-      role !== UserRole.ADMIN &&
-      role !== UserRole.MANAGER
-    ) {
-      return NextResponse.redirect(new URL('/', request.url));
+  // Handle role-based access control
+  if (isAuth && token.role) {
+    const userRole = token.role as string;
+    const isAdminRoute = request.nextUrl.pathname.startsWith('/dashboard/admin');
+    const isKitchenRoute = request.nextUrl.pathname.startsWith('/dashboard/kitchen');
+    const isServerRoute = request.nextUrl.pathname.startsWith('/dashboard/server');
+
+    // Redirect from main dashboard to role-specific dashboard
+    if (isDashboardPage) {
+      switch (userRole) {
+        case 'ADMIN':
+          return NextResponse.redirect(new URL('/dashboard/admin', request.url));
+        case 'KITCHEN':
+          return NextResponse.redirect(new URL('/dashboard/kitchen', request.url));
+        case 'SERVER':
+          return NextResponse.redirect(new URL('/dashboard/server', request.url));
+        default:
+          return NextResponse.redirect(new URL('/customer', request.url));
+      }
     }
 
-    // Kitchen routes - only kitchen, admin, and managers can access
-    if (
-      request.nextUrl.pathname.startsWith('/dashboard/kitchen') &&
-      role !== UserRole.KITCHEN &&
-      role !== UserRole.ADMIN &&
-      role !== UserRole.MANAGER
-    ) {
-      return NextResponse.redirect(new URL('/', request.url));
+    // Prevent access to unauthorized role-specific routes
+    if (isAdminRoute && userRole !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
 
-    // Server routes - only servers, admin, and managers can access
-    if (
-      request.nextUrl.pathname.startsWith('/dashboard/server') &&
-      role !== UserRole.SERVER &&
-      role !== UserRole.ADMIN &&
-      role !== UserRole.MANAGER
-    ) {
-      return NextResponse.redirect(new URL('/', request.url));
+    if (isKitchenRoute && userRole !== 'KITCHEN') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
+    }
+
+    if (isServerRoute && userRole !== 'SERVER') {
+      return NextResponse.redirect(new URL('/dashboard', request.url));
     }
   }
 
@@ -60,7 +75,9 @@ export default async function middleware(request: NextRequest) {
 // Paths that require authentication
 export const config = {
   matcher: [
+    '/',
     '/dashboard/:path*',
     '/auth/:path*',
+    '/customer/:path*',
   ],
 };

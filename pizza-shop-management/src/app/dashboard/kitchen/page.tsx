@@ -1,10 +1,12 @@
 'use client';
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { ChefHat, Clock, CheckCircle } from 'lucide-react';
+import { ChefHat, Clock, CheckCircle, Home, User, Settings, ArrowLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Mock data for demonstration
 const mockOrders = [
@@ -46,6 +48,7 @@ const mockOrders = [
 
 export default function KitchenDashboardPage() {
   const [orders, setOrders] = useState(mockOrders);
+  const [activeTab, setActiveTab] = useState("new");
 
   const updateOrderStatus = (orderId: string, newStatus: string) => {
     setOrders(
@@ -53,18 +56,63 @@ export default function KitchenDashboardPage() {
         order.id === orderId ? { ...order, status: newStatus } : order
       )
     );
+
+    // Update the active tab if there are no more orders in the current tab
+    const remainingOrdersInCurrentTab = orders.filter(
+      order => order.id !== orderId &&
+      ((activeTab === "new" && order.status === "PLACED") ||
+       (activeTab === "preparing" && order.status === "PREPARING") ||
+       (activeTab === "ready" && order.status === "READY"))
+    );
+
+    if (remainingOrdersInCurrentTab.length === 0) {
+      if (activeTab === "new") {
+        setActiveTab("preparing");
+      } else if (activeTab === "preparing") {
+        setActiveTab("ready");
+      }
+    }
   };
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold tracking-tight">Kitchen Display System</h1>
-        <p className="text-muted-foreground">
-          View and manage incoming orders for preparation.
-        </p>
+      {/* Navigation Bar */}
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Kitchen Dashboard</h1>
+          <p className="text-muted-foreground">
+            Manage orders and food preparation.
+          </p>
+        </div>
+        <div className="flex space-x-4">
+          <Link href="/">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Home size={16} />
+              Home
+            </Button>
+          </Link>
+          <Link href="/dashboard/admin">
+            <Button variant="outline" className="flex items-center gap-2">
+              <Settings size={16} />
+              Admin
+            </Button>
+          </Link>
+          <Link href="/dashboard/server">
+            <Button variant="outline" className="flex items-center gap-2">
+              <User size={16} />
+              Server
+            </Button>
+          </Link>
+          <Link href="/customer">
+            <Button variant="outline" className="flex items-center gap-2">
+              <ArrowLeft size={16} />
+              Customer View
+            </Button>
+          </Link>
+        </div>
       </div>
 
-      <Tabs defaultValue="new" className="w-full">
+      <Tabs defaultValue="new" value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="new">
             New Orders
@@ -100,6 +148,13 @@ export default function KitchenDashboardPage() {
                   actionIcon={<ChefHat className="mr-2 h-4 w-4" />}
                 />
               ))}
+            {orders.filter((order) => order.status === 'PLACED').length === 0 && (
+              <div className="col-span-2 py-12 text-center">
+                <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900">No new orders</h3>
+                <p className="mt-2 text-sm text-gray-500">All current orders are being prepared or ready for pick-up</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -117,6 +172,13 @@ export default function KitchenDashboardPage() {
                   actionIcon={<CheckCircle className="mr-2 h-4 w-4" />}
                 />
               ))}
+            {orders.filter((order) => order.status === 'PREPARING').length === 0 && (
+              <div className="col-span-2 py-12 text-center">
+                <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900">No orders in preparation</h3>
+                <p className="mt-2 text-sm text-gray-500">Check the new orders tab for incoming orders</p>
+              </div>
+            )}
           </div>
         </TabsContent>
 
@@ -134,6 +196,13 @@ export default function KitchenDashboardPage() {
                   actionIcon={<CheckCircle className="mr-2 h-4 w-4" />}
                 />
               ))}
+            {orders.filter((order) => order.status === 'READY').length === 0 && (
+              <div className="col-span-2 py-12 text-center">
+                <CheckCircle className="mx-auto h-12 w-12 text-green-500 mb-4" />
+                <h3 className="text-lg font-medium text-gray-900">No orders ready for pickup</h3>
+                <p className="mt-2 text-sm text-gray-500">All orders have been delivered or are still being prepared</p>
+              </div>
+            )}
           </div>
         </TabsContent>
       </Tabs>
