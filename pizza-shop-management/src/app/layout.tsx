@@ -7,6 +7,9 @@ import AuthProvider from '@/providers/auth-provider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
+  icons: {
+    icon: '/logoo.png',
+  },
   title: 'Pizza Shop Management System',
   description: 'Comprehensive system for managing pizza shop operations',
 };

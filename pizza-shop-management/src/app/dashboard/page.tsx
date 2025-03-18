@@ -1,11 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import React, { ReactElement, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { UserRole } from '@prisma/client';
 
-export default function DashboardPage() {
+export default function DashboardPage(): ReactElement {
   const { data: session } = useSession();
   const router = useRouter();
 

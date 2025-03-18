@@ -1,9 +1,10 @@
+import React, { ReactElement } from 'react';
 import { Card } from '@/components/ui/card';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Home, ChefHat, User, ArrowLeft, Utensils, Users, DollarSign, ClipboardList, BarChart2 } from 'lucide-react';
 
-export default function AdminDashboardPage() {
+export default function AdminDashboardPage(): ReactElement {
   return (
     <div className="space-y-6">
       {/* Navigation Bar */}
