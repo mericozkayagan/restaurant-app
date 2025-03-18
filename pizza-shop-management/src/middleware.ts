@@ -4,16 +4,21 @@ import { getToken } from 'next-auth/jwt';
 
 // We need to use token validation directly in Edge rather than the full auth implementation
 export async function middleware(request: NextRequest) {
-  // Add cookie debugging
-  console.log('Cookies:', request.cookies.getAll().map(c => c.name));
+  // Debug logs only in development
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Cookies:', request.cookies.getAll().map(c => c.name));
+  }
 
   const token = await getToken({
     req: request,
     secret: process.env.NEXTAUTH_SECRET,
-    secureCookie: false, // Allow non-secure cookies in all environments for testing
+    cookieName: "next-auth.session-token",
+    secureCookie: process.env.NODE_ENV === 'production',
   });
 
-  console.log('Middleware token:', token ? 'Found' : 'Not found');
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('Middleware token:', token ? 'Found' : 'Not found');
+  }
 
   const isAuth = !!token;
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth');

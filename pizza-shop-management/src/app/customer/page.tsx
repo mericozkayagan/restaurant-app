@@ -1,10 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import Image from 'next/image';
+import React, { ReactElement, useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ShoppingCart, MapPin, ChevronRight, Search, Bell, Home, ArrowLeft } from 'lucide-react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { ShoppingCart, MapPin, ChevronRight, Search, Bell, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -41,7 +39,7 @@ type CartItem = {
   image: string | null;
 };
 
-export default function CustomerOrderingPage() {
+export default function CustomerOrderingPage(): ReactElement {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categoryParam = searchParams.get('category');
