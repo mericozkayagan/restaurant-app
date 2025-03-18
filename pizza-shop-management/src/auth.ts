@@ -17,6 +17,18 @@ const authConfig: NextAuthConfig = {
   session: {
     strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
+  },
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: false, // Set to false for local development
+      },
+    },
   },
   providers: [
     CredentialsProvider({
@@ -39,6 +51,7 @@ const authConfig: NextAuthConfig = {
           });
 
           if (!user) {
+            console.log(`Auth failed: User not found - ${credentials.email}`);
             return null;
           }
 
@@ -48,9 +61,11 @@ const authConfig: NextAuthConfig = {
           );
 
           if (!passwordMatch) {
+            console.log(`Auth failed: Password mismatch - ${credentials.email}`);
             return null;
           }
 
+          console.log(`Auth success: ${credentials.email}, role: ${user.role}`);
           return {
             id: user.id,
             email: user.email,
@@ -66,10 +81,13 @@ const authConfig: NextAuthConfig = {
   ],
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
-      return !!auth?.user;
+      const isLoggedIn = !!auth?.user;
+      console.log(`Auth callback: User authorized: ${isLoggedIn}`);
+      return isLoggedIn;
     },
     async jwt({ token, user }) {
       if (user) {
+        console.log(`JWT callback: Setting token for user ${user.email}`);
         token.role = user.role;
         token.id = user.id;
       }
@@ -77,13 +95,25 @@ const authConfig: NextAuthConfig = {
     },
     async session({ session, token }) {
       if (token && session.user) {
+        console.log(`Session callback: Setting session for user ${session.user.email}`);
         session.user.id = token.id as string;
         session.user.role = token.role as UserRole;
       }
       return session;
     },
   },
-  debug: process.env.NODE_ENV === 'development',
+  events: {
+    async signIn({ user }) {
+      console.log(`User signed in: ${user.email}`);
+    },
+    async signOut() {
+      console.log("User signed out");
+    },
+    async session({ session, token }) {
+      console.log(`Session accessed: ${session?.user?.email}`);
+    },
+  },
+  debug: true, // Always enable debug for troubleshooting
 };
 
 // Export auth functions with proper Next.js App Router support

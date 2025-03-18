@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { signIn } from 'next-auth/react';
 
 // Types for database items
 type MenuItem = {
@@ -206,11 +207,12 @@ export default function CustomerOrderingPage() {
             <Link href="/notifications">
               <Bell className="h-6 w-6 cursor-pointer hover:text-orange-400" />
             </Link>
-            <Link href="/auth/signin">
-              <Button className="rounded-full bg-white px-4 py-2 font-bold text-black hover:bg-gray-200">
-                Giriş Yap
-              </Button>
-            </Link>
+            <Button
+              className="rounded-full bg-white px-4 py-2 font-bold text-black hover:bg-gray-200"
+              onClick={() => signIn(undefined, { callbackUrl: '/dashboard' })}
+            >
+              Giriş Yap
+            </Button>
             <Link href="/customer/cart" className="relative">
               <ShoppingCart className="h-6 w-6 cursor-pointer hover:text-orange-400" />
               {cart.length > 0 && (
@@ -233,11 +235,26 @@ export default function CustomerOrderingPage() {
               Ana Sayfa
             </Link>
             <span className="text-gray-500">/</span>
-            <Link href="/dashboard/admin" className="text-sm hover:text-orange-400">Yönetici</Link>
+            <button
+              className="text-sm hover:text-orange-400 bg-transparent border-none cursor-pointer"
+              onClick={() => signIn(undefined, { callbackUrl: '/dashboard/admin' })}
+            >
+              Yönetici
+            </button>
             <span className="text-gray-500">/</span>
-            <Link href="/dashboard/kitchen" className="text-sm hover:text-orange-400">Mutfak</Link>
+            <button
+              className="text-sm hover:text-orange-400 bg-transparent border-none cursor-pointer"
+              onClick={() => signIn(undefined, { callbackUrl: '/dashboard/kitchen' })}
+            >
+              Mutfak
+            </button>
             <span className="text-gray-500">/</span>
-            <Link href="/dashboard/server" className="text-sm hover:text-orange-400">Garson</Link>
+            <button
+              className="text-sm hover:text-orange-400 bg-transparent border-none cursor-pointer"
+              onClick={() => signIn(undefined, { callbackUrl: '/dashboard/server' })}
+            >
+              Garson
+            </button>
           </div>
         </div>
       </div>

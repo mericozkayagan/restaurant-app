@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
@@ -19,6 +19,8 @@ type SignInFormData = z.infer<typeof signInSchema>;
 
 export function SignInForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/dashboard';
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -39,6 +41,7 @@ export function SignInForm() {
         email: data.email,
         password: data.password,
         redirect: false,
+        callbackUrl,
       });
 
       if (!response) {
@@ -55,7 +58,7 @@ export function SignInForm() {
         return;
       }
 
-      router.push('/dashboard');
+      router.push(callbackUrl);
       router.refresh();
     } catch (err) {
       console.error('Sign-in error:', err);

@@ -4,15 +4,29 @@ import { getToken } from 'next-auth/jwt';
 
 // We need to use token validation directly in Edge rather than the full auth implementation
 export async function middleware(request: NextRequest) {
+  // Add cookie debugging
+  console.log('Cookies:', request.cookies.getAll().map(c => c.name));
+
   const token = await getToken({
     req: request,
-    secret: process.env.NEXTAUTH_SECRET
+    secret: process.env.NEXTAUTH_SECRET,
+    secureCookie: false, // Allow non-secure cookies in all environments for testing
   });
+
+  console.log('Middleware token:', token ? 'Found' : 'Not found');
+
   const isAuth = !!token;
   const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
   const isCustomerPage = request.nextUrl.pathname.startsWith('/customer');
   const isRootPage = request.nextUrl.pathname === '/';
   const isDashboardPage = request.nextUrl.pathname === '/dashboard';
+  const isDashboardRoute = request.nextUrl.pathname.startsWith('/dashboard');
+  const isApiAuthRoute = request.nextUrl.pathname.startsWith('/api/auth');
+
+  // Bypass middleware for API auth routes to prevent interference
+  if (isApiAuthRoute) {
+    return NextResponse.next();
+  }
 
   // Redirect root to customer page
   if (isRootPage) {
@@ -24,9 +38,16 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
+  // Allow access to auth pages without authentication
+  if (isAuthPage && !isAuth) {
+    return NextResponse.next();
+  }
+
   // Redirect unauthenticated users to login page for protected routes
-  if (!isAuth && !isAuthPage) {
-    return NextResponse.redirect(new URL('/auth/signin', request.url));
+  if (!isAuth && isDashboardRoute) {
+    const signinUrl = new URL('/auth/signin', request.url);
+    signinUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
+    return NextResponse.redirect(signinUrl);
   }
 
   // Redirect authenticated users away from auth pages
